@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    container_name: taskplanner_database
+    env_file: .env
+    networks:
+      - default
+    environment:
+      POSTGRES_USER: {DB_USER}
+      POSTGRES_PASSWORD: {DB_PASSWORD}
+      POSTGRES_DB: taskplanner_db
+    volumes:
+      - ./sql/create_table.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_remote_access
+    env_file: .env
+    networks:
+      - default
+    environment:
+      PGADMIN_DEFAULT_EMAIL: {PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: {PGADMIN_PASSWORD}
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskplanner_bot
+    env_file: .env
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
